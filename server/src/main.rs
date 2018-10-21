@@ -1,6 +1,15 @@
 extern crate env_logger;
 extern crate ws;
 
+#[macro_use]
+extern crate lazy_static;
+
+use std::sync::Mutex;
+
+lazy_static! {
+    static ref CONNECTIONS: Mutex<Vec<Connection>> = Mutex::new(vec![]);
+}
+
 // A WebSocket handler that routes connections to different boxed handlers by resource
 struct Router {
     sender: ws::Sender,
@@ -12,15 +21,23 @@ impl ws::Handler for Router {
         // Clone the sender so that we can move it into the child handler
         let out = self.sender.clone();
 
+        // /register -> Add to CONNECTIONS vector
+        // /get_channels -> Simply get message channels from public key
+        // /get_messages -> return encrypted messages based on predetermined key
+        // /post_message -> post a message to a channel, find the client connection if it exists and
+        // send them a message
         match req.resource() {
             "/get_channels" => self.inner = Box::new(Echo { ws: out }),
-            "/get_messages" => self.inner = Box::new(Echo { ws: out }),
+            "/get_messages" => {
+                self.inner = Box::new(ChannelMessages {
+                    ws: out,
+                })
+            },
 
             // Route to a data handler
             "/post_message" => {
-                self.inner = Box::new(Data {
+                self.inner = Box::new(Poster {
                     ws: out,
-                    data: vec!["one", "two", "three", "four", "five"],
                 })
             }
             // Use the default child handler, NotFound
@@ -44,6 +61,7 @@ impl ws::Handler for Router {
         self.inner.on_message(msg)
     }
 
+    // TODO: Remove ourself from the list of vector connections if it exists
     fn on_close(&mut self, code: ws::CloseCode, reason: &str) {
         self.inner.on_close(code, reason)
     }
@@ -78,25 +96,45 @@ impl ws::Handler for Echo {
     }
 }
 
-// This handler sends some data to the client and then terminates the connection on the first
-// message received, presumably confirming receipt of the data
-struct Data {
+// This handler looks up the 30 most recent channel messages, and registers the client
+struct ChannelMessages {
     ws: ws::Sender,
-    data: Vec<&'static str>,
 }
 
-impl ws::Handler for Data {
-    fn on_open(&mut self, _: ws::Handshake) -> ws::Result<()> {
-        for msg in &self.data {
-            self.ws.send(*msg)?
-        }
-        Ok(())
-    }
-
+impl ws::Handler for ChannelMessages {
+    // Here we add ourself to the vector of connections
     fn on_message(&mut self, msg: ws::Message) -> ws::Result<()> {
+        println!("ChannelMessages handler received a message: {}", msg);
+
+        // We will have the public key here, so we will actually add it here
+        let connection = Connection {
+            ws: self.ws.clone(),
+            public_key: String::from("cat")
+        };
+
+        // TODO: Only push if the public key doesnt already exist
+        CONNECTIONS.lock().unwrap().push(connection);
+        self.ws.send(msg)
+    }
+}
+
+// This handler sends some data to the client and then terminates the connection on the first
+// message received, presumably confirming receipt of the data
+struct Poster {
+    ws: ws::Sender,
+}
+
+struct Connection {
+    ws: ws::Sender,
+    public_key: String
+}
+
+impl ws::Handler for Poster {
+    fn on_message(&mut self, msg: ws::Message) -> ws::Result<()> {
+        // TODO: From the poster, we need to record the message, and do a send to the receipient
+        // if the are currently connected
         println!("Data handler received a message: {}", msg);
-        println!("Data handler going down.");
-        self.ws.close(ws::CloseCode::Normal)
+        self.ws.send("")
     }
 }
 
