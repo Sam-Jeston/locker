@@ -4,3 +4,5 @@ version = "0.1.0"
 authors = ["Sam Jeston <sam.jeston@gmail.com>"]
 
 [dependencies]
+ws = "0.7.9"
+env_logger = "0.5.13"
