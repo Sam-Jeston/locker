@@ -1,19 +1,14 @@
 extern crate env_logger;
 extern crate ws;
 
-#[macro_use]
-extern crate lazy_static;
-
-use std::sync::Mutex;
-
-lazy_static! {
-    static ref CONNECTIONS: Mutex<Vec<Connection>> = Mutex::new(vec![]);
-}
+use std::sync::{Mutex, Arc};
+use std::collections::HashMap;
 
 // A WebSocket handler that routes connections to different boxed handlers by resource
 struct Router {
     sender: ws::Sender,
     inner: Box<ws::Handler>,
+    channel_pointer: Arc<Mutex<HashMap<String, Box<ws::Sender>>>>,
 }
 
 impl ws::Handler for Router {
@@ -28,6 +23,7 @@ impl ws::Handler for Router {
         // send them a message
         match req.resource() {
             "/get_channels" => self.inner = Box::new(Echo { ws: out }),
+            "/register" => self.inner = Box::new(Register { ws: out, channel_pointer: self.channel_pointer.clone()}),
             "/get_messages" => {
                 self.inner = Box::new(ChannelMessages {
                     ws: out,
@@ -38,6 +34,7 @@ impl ws::Handler for Router {
             "/post_message" => {
                 self.inner = Box::new(Poster {
                     ws: out,
+                    channel_pointer: self.channel_pointer.clone(),
                 })
             }
             // Use the default child handler, NotFound
@@ -113,8 +110,27 @@ impl ws::Handler for ChannelMessages {
         };
 
         // TODO: Only push if the public key doesnt already exist
-        CONNECTIONS.lock().unwrap().push(connection);
         self.ws.send(msg)
+    }
+}
+
+struct Register {
+    ws: ws::Sender,
+    channel_pointer: Arc<Mutex<HashMap<String, Box<ws::Sender>>>>,
+}
+
+impl ws::Handler for Register {
+    // Here we add ourself to the vector of connections
+    fn on_message(&mut self, msg: ws::Message) -> ws::Result<()> {
+        println!("Register handler received a message: {}", msg);
+
+        let owner_msg = String::from(msg.as_text().unwrap());
+        let mut channel_ref = self.channel_pointer.lock().unwrap();
+
+        let ws = self.ws.clone();
+        channel_ref.insert(owner_msg, Box::new(ws));
+
+        self.ws.send("")
     }
 }
 
@@ -122,6 +138,7 @@ impl ws::Handler for ChannelMessages {
 // message received, presumably confirming receipt of the data
 struct Poster {
     ws: ws::Sender,
+    channel_pointer: Arc<Mutex<HashMap<String, Box<ws::Sender>>>>,
 }
 
 struct Connection {
@@ -134,19 +151,34 @@ impl ws::Handler for Poster {
         // TODO: From the poster, we need to record the message, and do a send to the receipient
         // if the are currently connected
         println!("Data handler received a message: {}", msg);
+
+        let owner_msg = "Actually the public key";
+        let channel_ref = self.channel_pointer.lock().unwrap();
+
+        match channel_ref.get(owner_msg) {
+            Some(chan) => {
+                chan.send("The new message");
+                ()
+            },
+            None => ()
+        };
+
         self.ws.send("")
     }
 }
 
 fn main() {
     env_logger::init();
+    let channel_ref = Arc::new(Mutex::new(HashMap::new()));
 
     // Listen on an address and call the closure for each connection
     if let Err(error) = ws::listen("127.0.0.1:3012", |out| {
+        let channel_pointer = Arc::clone(&channel_ref);
         // Use our router as the handler to route the new connection
         Router {
             sender: out,
             inner: Box::new(NotFound),
+            channel_pointer: channel_pointer,
         }
     }) {
         // Inform the user of failure
