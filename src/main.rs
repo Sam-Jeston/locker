@@ -1,7 +1,11 @@
 extern crate env_logger;
 extern crate ws;
+#[macro_use]
+extern crate diesel;
+extern crate dotenv;
 
 mod sockets;
+mod database;
 
 use std::sync::{Mutex, Arc};
 use std::collections::HashMap;
