@@ -4,5 +4,5 @@ docker run \
   -e POSTGRES_PASSWORD="postgres" \
   -e POSTGRES_DB=locker \
   --name "postgres" \
+  --rm \
   -d postgres:9.5
-  --rm
