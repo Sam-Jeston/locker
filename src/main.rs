@@ -3,6 +3,7 @@ extern crate ws;
 #[macro_use]
 extern crate diesel;
 extern crate dotenv;
+extern crate chrono;
 
 mod sockets;
 mod database;
@@ -10,9 +11,14 @@ mod database;
 use std::sync::{Mutex, Arc};
 use std::collections::HashMap;
 use sockets::router::{Router, NotFound};
+use database::{establish_connection};
 
 fn main() {
     env_logger::init();
+
+    // Ensure our DB is healthy
+    establish_connection();
+
     let channel_ref = Arc::new(Mutex::new(HashMap::new()));
 
     // Listen on an address and call the closure for each connection

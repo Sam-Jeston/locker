@@ -11,3 +11,6 @@ ON channels (creator);
 
 CREATE INDEX member_index
 ON channels (member);
+
+CREATE UNIQUE INDEX one_channel_per_group
+on channels (creator, member);

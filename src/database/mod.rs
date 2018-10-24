@@ -1,6 +1,7 @@
 #[macro_use]
 pub mod schema;
 pub mod models;
+pub mod channels;
 
 use diesel::prelude::*;
 use diesel::pg::PgConnection;
