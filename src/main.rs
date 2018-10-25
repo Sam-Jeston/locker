@@ -19,7 +19,7 @@ use sockets::Router;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
-fn main() {
+pub fn main() {
     env_logger::init();
 
     // Ensure our DB is healthy

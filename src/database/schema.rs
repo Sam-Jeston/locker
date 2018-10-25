@@ -21,4 +21,7 @@ table! {
 
 joinable!(messages -> channels (channel_id));
 
-allow_tables_to_appear_in_same_query!(channels, messages,);
+allow_tables_to_appear_in_same_query!(
+    channels,
+    messages,
+);

@@ -36,7 +36,6 @@ struct PostMessageBody {
 impl ws::Handler for Router {
     fn on_message(&mut self, msg: ws::Message) -> ws::Result<()> {
         let raw_msg = msg.as_text().unwrap();
-
         // This approach is a little primative. Match on the incoming message, if it parses correctly,
         // do the behaviour for that action type. Its okay for now
 
@@ -113,7 +112,9 @@ impl ws::Handler for Router {
                 }
             }
             Err(_) => self.sender.close(ws::CloseCode::Error),
-        }
+        };
+
+        self.sender.send("")
     }
 
     // TODO: Remove ourself from the list of vector connections if it exists
