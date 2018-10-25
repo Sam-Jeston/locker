@@ -15,7 +15,7 @@ mod database;
 mod sockets;
 
 use database::establish_connection;
-use sockets::router::{NotFound, Router};
+use sockets::Router;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -33,7 +33,6 @@ fn main() {
         // Use our router as the handler to route the new connection
         Router {
             sender: out,
-            inner: Box::new(NotFound),
             channel_pointer: channel_pointer,
         }
     }) {

@@ -3,11 +3,16 @@ An end-to-end encrypted message platform. Locker puts the onus back on users to 
 
 ## Development
 
-Our server simply listens for socket connections and stores the encrypted messages for conversations. On connection to channel the most recent encrypted messages are sent.
+Our server simply listens for socket connections and stores / sends the encrypted messages for conversation channels.
+
+A single websocket is used to push messages to the client, while the static routes use Rocket.
 
 Dependencies:
- - Rust (> v1.29)
+ - Rust (> v1.31)
  - Have a postgres instance accessible on port 5432
 
-### Useful references
-https://github.com/diesel-rs/diesel
+### TODOs
+1. Remove ws references from HashMap on socket disconnect to free memory
+2. Lots of instances of unwrap(). Match these properly. Also clean up unconsumed Result types.
+3. Page the message data. This implementation will depend on how this is approached in the client.
+4. Clean up the sockets module. Both the matching on incoming messages and make it more modular in general.
