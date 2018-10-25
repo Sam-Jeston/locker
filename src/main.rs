@@ -34,6 +34,7 @@ pub fn main() {
         Router {
             sender: out,
             channel_pointer: channel_pointer,
+            public_key: String::from(""),
         }
     }) {
         // Inform the user of failure
