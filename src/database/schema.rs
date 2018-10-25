@@ -11,9 +11,9 @@ table! {
 table! {
     messages (id) {
         id -> Int4,
-        channel_id -> Nullable<Int4>,
-        message -> Nullable<Text>,
-        nonce -> Nullable<Varchar>,
+        channel_id -> Int4,
+        message -> Text,
+        nonce -> Varchar,
         created_at -> Timestamp,
         updated_at -> Timestamp,
     }

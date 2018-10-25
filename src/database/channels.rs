@@ -13,7 +13,7 @@ pub fn get_channels_for_client(client: &str) -> Vec<Channel> {
         .filter(creator.eq(&client))
         .or_filter(member.eq(&client))
         .load::<Channel>(&connection)
-        .expect("Error loading posts")
+        .expect("Error loading channels")
 }
 
 pub fn create_channel(crt: &str, mem: &str) -> Channel {
@@ -23,7 +23,7 @@ pub fn create_channel(crt: &str, mem: &str) -> Channel {
     diesel::insert_into(channels::table)
         .values(&channel)
         .get_result::<Channel>(&connection)
-        .expect("Error saving new chanel")
+        .expect("Error saving new channel")
 }
 
 #[cfg(test)]
@@ -43,7 +43,7 @@ mod tests {
         diesel::insert_into(channels::table)
             .values(&new_channels)
             .get_result::<Channel>(&connection)
-            .expect("Error saving new chanel");
+            .expect("Error saving new channel");
 
         let results = get_channels_for_client("foo");
 
@@ -63,7 +63,7 @@ mod tests {
         diesel::insert_into(channels::table)
             .values(&new_channels)
             .get_result::<Channel>(&connection)
-            .expect("Error saving new chanel");
+            .expect("Error saving new channel");
 
         let results = get_channels_for_client("bas");
 

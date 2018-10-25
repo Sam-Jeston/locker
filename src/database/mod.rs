@@ -2,6 +2,7 @@
 pub mod schema;
 pub mod models;
 pub mod channels;
+pub mod messages;
 
 use diesel::prelude::*;
 use diesel::pg::PgConnection;
