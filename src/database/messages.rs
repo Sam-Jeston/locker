@@ -1,11 +1,11 @@
 extern crate diesel;
 
+use database::establish_connection;
 use database::models::*;
+use database::schema::messages;
+use database::schema::messages::dsl::*;
 use diesel::prelude::*;
 use diesel::RunQueryDsl;
-use database::{establish_connection};
-use database::schema::messages::dsl::*;
-use database::schema::messages;
 
 pub fn get_messsages_for_channel(chan_id: i32) -> Vec<Message> {
     let connection = establish_connection();
@@ -17,7 +17,11 @@ pub fn get_messsages_for_channel(chan_id: i32) -> Vec<Message> {
 
 pub fn create_message(chan_id: i32, new_message: &str, new_nonce: &str) -> Message {
     let connection = establish_connection();
-    let msg = NewMessage { channel_id: &chan_id, message: new_message, nonce: new_nonce };
+    let msg = NewMessage {
+        channel_id: &chan_id,
+        message: new_message,
+        nonce: new_nonce,
+    };
 
     diesel::insert_into(messages::table)
         .values(&msg)
@@ -28,8 +32,8 @@ pub fn create_message(chan_id: i32, new_message: &str, new_nonce: &str) -> Messa
 #[cfg(test)]
 mod tests {
     use super::*;
-    use database::tests::{truncate_tables};
-    use database::channels::{create_channel};
+    use database::channels::create_channel;
+    use database::tests::truncate_tables;
 
     #[test]
     fn creates_a_new_message_for_a_channel() {

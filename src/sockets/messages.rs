@@ -1,7 +1,7 @@
-use std::sync::{Mutex, Arc};
-use std::collections::HashMap;
 use database::messages::{create_message, get_messsages_for_channel};
-use database::models::{ToJsonForm, MessageJson};
+use database::models::{MessageJson, ToJsonForm};
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 pub struct Message {
     pub ws: ws::Sender,
@@ -9,25 +9,25 @@ pub struct Message {
 
 #[derive(Serialize, Deserialize)]
 struct MessageBody {
-    channel_id: i32
+    channel_id: i32,
 }
 
 impl ws::Handler for Message {
     fn on_message(&mut self, msg: ws::Message) -> ws::Result<()> {
-        let raw_msg =  msg.as_text().unwrap();
+        let raw_msg = msg.as_text().unwrap();
         match serde_json::from_str::<MessageBody>(raw_msg) {
             Ok(parsed_msg) => {
                 // TODO: Page this data
                 let messages = get_messsages_for_channel(parsed_msg.channel_id);
-                let messages_json: Vec<MessageJson> = messages.into_iter().map(|c| c.to_json_form()).collect();
+                let messages_json: Vec<MessageJson> =
+                    messages.into_iter().map(|c| c.to_json_form()).collect();
                 match serde_json::to_string(&messages_json) {
                     Ok(res) => self.ws.send(res),
-                    Err(_) => self.ws.close(ws::CloseCode::Error)
+                    Err(_) => self.ws.close(ws::CloseCode::Error),
                 }
-            },
-            Err(_) => self.ws.close(ws::CloseCode::Error)
+            }
+            Err(_) => self.ws.close(ws::CloseCode::Error),
         }
-
     }
 }
 
@@ -41,15 +41,19 @@ struct PostMessageBody {
     receiver_public_key: String,
     channel_id: i32,
     message: String,
-    nonce: String
+    nonce: String,
 }
 
 impl ws::Handler for PostMessage {
     fn on_message(&mut self, msg: ws::Message) -> ws::Result<()> {
-        let raw_msg =  msg.as_text().unwrap();
+        let raw_msg = msg.as_text().unwrap();
         match serde_json::from_str::<PostMessageBody>(raw_msg) {
             Ok(parsed_msg) => {
-                let new_message = create_message(parsed_msg.channel_id, &parsed_msg.message, &parsed_msg.nonce);
+                let new_message = create_message(
+                    parsed_msg.channel_id,
+                    &parsed_msg.message,
+                    &parsed_msg.nonce,
+                );
                 let message_json: MessageJson = new_message.to_json_form();
                 match serde_json::to_string(&message_json) {
                     Ok(res) => {
@@ -59,16 +63,16 @@ impl ws::Handler for PostMessage {
                             Some(chan) => {
                                 let res_clone = res.clone();
                                 chan.send(res_clone);
-                            },
-                            None => ()
+                            }
+                            None => (),
                         };
 
                         self.ws.send(res)
-                    },
-                    Err(_) => self.ws.close(ws::CloseCode::Error)
+                    }
+                    Err(_) => self.ws.close(ws::CloseCode::Error),
                 }
-            },
-            Err(_) => self.ws.close(ws::CloseCode::Error)
+            }
+            Err(_) => self.ws.close(ws::CloseCode::Error),
         }
     }
 }

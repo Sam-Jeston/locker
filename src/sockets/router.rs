@@ -1,8 +1,8 @@
-use std::sync::{Mutex, Arc};
-use std::collections::HashMap;
-use sockets::register::Register;
 use sockets::channels::{Channel, CreateChannel};
 use sockets::messages::{Message, PostMessage};
+use sockets::register::Register;
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 
 pub struct Router {
     pub sender: ws::Sender,
@@ -15,20 +15,21 @@ impl ws::Handler for Router {
         let out = self.sender.clone();
 
         match req.resource() {
-            "/register" => self.inner = Box::new(Register { ws: out, channel_pointer: self.channel_pointer.clone()}),
-            "/channels" => self.inner = Box::new(Channel { ws: out}),
-            "/create_channel" => self.inner = Box::new(CreateChannel { ws: out}),
+            "/register" => {
+                self.inner = Box::new(Register {
+                    ws: out,
+                    channel_pointer: self.channel_pointer.clone(),
+                })
+            }
+            "/channels" => self.inner = Box::new(Channel { ws: out }),
+            "/create_channel" => self.inner = Box::new(CreateChannel { ws: out }),
             "/post_message" => {
                 self.inner = Box::new(PostMessage {
                     ws: out,
                     channel_pointer: self.channel_pointer.clone(),
                 })
-            },
-            "/messages" => {
-                self.inner = Box::new(Message {
-                    ws: out,
-                })
             }
+            "/messages" => self.inner = Box::new(Message { ws: out }),
             // Use the default child handler, NotFound
             _ => (),
         }

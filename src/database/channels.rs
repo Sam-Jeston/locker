@@ -1,11 +1,11 @@
 extern crate diesel;
 
+use database::establish_connection;
 use database::models::*;
+use database::schema::channels;
+use database::schema::channels::dsl::*;
 use diesel::prelude::*;
 use diesel::RunQueryDsl;
-use database::{establish_connection};
-use database::schema::channels::dsl::*;
-use database::schema::channels;
 
 pub fn get_channels_for_client(client: &str) -> Vec<Channel> {
     let connection = establish_connection();
@@ -18,7 +18,10 @@ pub fn get_channels_for_client(client: &str) -> Vec<Channel> {
 
 pub fn create_channel(crt: &str, mem: &str) -> Channel {
     let connection = establish_connection();
-    let channel = NewChannel { creator: crt, member: mem };
+    let channel = NewChannel {
+        creator: crt,
+        member: mem,
+    };
 
     diesel::insert_into(channels::table)
         .values(&channel)
@@ -29,15 +32,21 @@ pub fn create_channel(crt: &str, mem: &str) -> Channel {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use database::tests::{truncate_tables};
+    use database::tests::truncate_tables;
 
     #[test]
     fn returns_channels_when_client_is_creator() {
         let connection = truncate_tables();
 
         let new_channels: Vec<NewChannel> = vec![
-            NewChannel { creator: "foo", member: "bar" },
-            NewChannel { creator: "faz", member: "bas" }
+            NewChannel {
+                creator: "foo",
+                member: "bar",
+            },
+            NewChannel {
+                creator: "faz",
+                member: "bas",
+            },
         ];
 
         diesel::insert_into(channels::table)
@@ -56,8 +65,14 @@ mod tests {
         let connection = truncate_tables();
 
         let new_channels: Vec<NewChannel> = vec![
-            NewChannel { creator: "foo", member: "bar" },
-            NewChannel { creator: "faz", member: "bas" }
+            NewChannel {
+                creator: "foo",
+                member: "bar",
+            },
+            NewChannel {
+                creator: "faz",
+                member: "bas",
+            },
         ];
 
         diesel::insert_into(channels::table)

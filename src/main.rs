@@ -1,23 +1,23 @@
 #![allow(proc_macro_derive_resolution_fallback)]
 
-extern crate env_logger;
-extern crate ws;
-extern crate serde_json;
-extern crate dotenv;
 extern crate chrono;
+extern crate dotenv;
+extern crate env_logger;
+extern crate serde_json;
+extern crate ws;
 
 #[macro_use]
 extern crate serde_derive;
 #[macro_use]
 extern crate diesel;
 
-mod sockets;
 mod database;
+mod sockets;
 
-use std::sync::{Mutex, Arc};
+use database::establish_connection;
+use sockets::router::{NotFound, Router};
 use std::collections::HashMap;
-use sockets::router::{Router, NotFound};
-use database::{establish_connection};
+use std::sync::{Arc, Mutex};
 
 fn main() {
     env_logger::init();

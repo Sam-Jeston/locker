@@ -1,6 +1,6 @@
-use chrono::NaiveDateTime ;
 use super::schema::channels;
 use super::schema::messages;
+use chrono::NaiveDateTime;
 
 pub trait ToJsonForm<T> {
     fn to_json_form(&self) -> T;
@@ -33,13 +33,13 @@ impl ToJsonForm<ChannelJson> for Channel {
             creator: self.creator.clone(),
             member: self.member.clone(),
             created_at: created_at,
-            updated_at: updated_at
+            updated_at: updated_at,
         }
     }
 }
 
 #[derive(Insertable)]
-#[table_name="channels"]
+#[table_name = "channels"]
 pub struct NewChannel<'a> {
     pub creator: &'a str,
     pub member: &'a str,
@@ -56,7 +56,7 @@ pub struct Message {
 }
 
 #[derive(Insertable)]
-#[table_name="messages"]
+#[table_name = "messages"]
 pub struct NewMessage<'a> {
     pub channel_id: &'a i32,
     pub message: &'a str,
@@ -83,7 +83,7 @@ impl ToJsonForm<MessageJson> for Message {
             message: self.message.clone(),
             nonce: self.nonce.clone(),
             created_at: created_at,
-            updated_at: updated_at
+            updated_at: updated_at,
         }
     }
 }
