@@ -8,7 +8,7 @@ pub struct Register {
 
 #[derive(Serialize, Deserialize)]
 struct RegistrationBody {
-    message: String
+    public_key: String
 }
 
 impl ws::Handler for Register {
@@ -18,7 +18,7 @@ impl ws::Handler for Register {
             Ok(parsed_msg) => {
                 let mut channel_ref = self.channel_pointer.lock().unwrap();
                 let ws = self.ws.clone();
-                channel_ref.insert(parsed_msg.message, Box::new(ws));
+                channel_ref.insert(parsed_msg.public_key, Box::new(ws));
                 self.ws.send("{\"status\": \"connected\"}")
             },
             Err(_) => self.ws.close(ws::CloseCode::Error)

@@ -1,9 +1,9 @@
 use std::sync::{Mutex, Arc};
 use std::collections::HashMap;
 use sockets::register::Register;
-use sockets::messages::PostMessage;
+use sockets::channels::{Channel, CreateChannel};
+use sockets::messages::{Message, PostMessage};
 
-// A WebSocket handler that routes connections to different boxed handlers by resource
 pub struct Router {
     pub sender: ws::Sender,
     pub inner: Box<ws::Handler>,
@@ -12,20 +12,21 @@ pub struct Router {
 
 impl ws::Handler for Router {
     fn on_request(&mut self, req: &ws::Request) -> ws::Result<(ws::Response)> {
-        // Clone the sender so that we can move it into the child handler
         let out = self.sender.clone();
 
-        // /register -> Add to CONNECTIONS vector
-        // /get_channels -> Simply get message channels from public key
-        // /get_messages -> return encrypted messages based on predetermined key
-        // /post_message -> post a message to a channel, find the client connection if it exists and
-        // send them a message
         match req.resource() {
             "/register" => self.inner = Box::new(Register { ws: out, channel_pointer: self.channel_pointer.clone()}),
+            "/channels" => self.inner = Box::new(Channel { ws: out}),
+            "/create_channel" => self.inner = Box::new(CreateChannel { ws: out}),
             "/post_message" => {
                 self.inner = Box::new(PostMessage {
                     ws: out,
                     channel_pointer: self.channel_pointer.clone(),
+                })
+            },
+            "/messages" => {
+                self.inner = Box::new(Message {
+                    ws: out,
                 })
             }
             // Use the default child handler, NotFound
@@ -59,12 +60,10 @@ impl ws::Handler for Router {
     }
 }
 
-// This handler returns a 404 response to all handshake requests
 pub struct NotFound;
 
 impl ws::Handler for NotFound {
     fn on_request(&mut self, req: &ws::Request) -> ws::Result<(ws::Response)> {
-        // This handler responds to all requests with a 404
         let mut res = ws::Response::from_request(req)?;
         res.set_status(404);
         res.set_reason("Not Found");
