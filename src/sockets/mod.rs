@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 
 pub struct Router {
     pub sender: ws::Sender,
-    pub channel_pointer: Arc<Mutex<HashMap<String, Box<ws::Sender>>>>,
+    pub socket_map: Arc<Mutex<HashMap<String, Box<ws::Sender>>>>,
     pub public_key: String,
 }
 
@@ -49,9 +49,9 @@ impl ws::Handler for Router {
         match routing {
             // Registration: Register the ws in our HashMap and return the channels to the user
             (Ok(parsed_msg), _, _, _) => {
-                let mut channel_ref = self.channel_pointer.lock().unwrap();
+                let mut sockets = self.socket_map.lock().unwrap();
                 let ws = self.sender.clone();
-                channel_ref.insert(parsed_msg.public_key.clone(), Box::new(ws));
+                sockets.insert(parsed_msg.public_key.clone(), Box::new(ws));
                 self.public_key = parsed_msg.public_key.clone();
 
                 let channels = get_channels_for_client(&parsed_msg.public_key);
@@ -93,9 +93,9 @@ impl ws::Handler for Router {
                 let message_json: MessageJson = new_message.to_json_form();
                 match serde_json::to_string(&message_json) {
                     Ok(res) => {
-                        let channel_ref = self.channel_pointer.lock().unwrap();
+                        let sockets = self.socket_map.lock().unwrap();
 
-                        match channel_ref.get(&parsed_msg.receiver_public_key) {
+                        match sockets.get(&parsed_msg.receiver_public_key) {
                             Some(chan) => {
                                 let res_clone = res.clone();
                                 chan.send(res_clone);
@@ -112,7 +112,8 @@ impl ws::Handler for Router {
         }
     }
 
-    // TODO: Remove ws connection from the list of vector connections if it exists
-    // fn on_close(&mut self, code: ws::CloseCode, reason: &str) {
-    // }
+    fn on_shutdown(&mut self) {
+        let mut sockets = self.socket_map.lock().unwrap();
+        sockets.remove(&self.public_key);
+    }
 }

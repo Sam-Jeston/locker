@@ -25,15 +25,15 @@ pub fn main() {
     // Ensure our DB is healthy
     establish_connection();
 
-    let channel_ref = Arc::new(Mutex::new(HashMap::new()));
+    let sockets = Arc::new(Mutex::new(HashMap::new()));
 
     // Listen on an address and call the closure for each connection
     if let Err(error) = ws::listen("127.0.0.1:3012", |out| {
-        let channel_pointer = Arc::clone(&channel_ref);
+        let socket_pointer = Arc::clone(&sockets);
         // Use our router as the handler to route the new connection
         Router {
             sender: out,
-            channel_pointer: channel_pointer,
+            socket_map: socket_pointer,
             public_key: String::from(""),
         }
     }) {
