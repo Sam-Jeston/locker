@@ -5,3 +5,8 @@ services:
   - postgresql
 before_script:
   - psql -c 'create database locker;' -U postgres
+  - cargo install diesel_cli --no-default-features --features=postgres
+  - diesel migration run
+# Due to DB cleanup, we run out tests in a single thread
+script:
+  - cargo test -- --test-threads=1

@@ -16,3 +16,15 @@ pub fn establish_connection() -> PgConnection {
     PgConnection::establish(&database_url)
         .expect(&format!("Error connecting to {}", database_url))
 }
+
+#[cfg(test)]
+pub mod tests {
+    use super::*;
+
+    pub fn truncate_tables() -> PgConnection {
+        let conn = establish_connection();
+        conn.execute("TRUNCATE TABLE messages CASCADE").unwrap();
+        conn.execute("TRUNCATE TABLE channels CASCADE").unwrap();
+        conn
+    }
+}

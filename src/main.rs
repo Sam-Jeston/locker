@@ -1,3 +1,5 @@
+#![allow(proc_macro_derive_resolution_fallback)]
+
 extern crate env_logger;
 extern crate ws;
 #[macro_use]
