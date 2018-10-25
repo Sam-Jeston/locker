@@ -2,10 +2,14 @@
 
 extern crate env_logger;
 extern crate ws;
-#[macro_use]
-extern crate diesel;
+extern crate serde_json;
 extern crate dotenv;
 extern crate chrono;
+
+#[macro_use]
+extern crate serde_derive;
+#[macro_use]
+extern crate diesel;
 
 mod sockets;
 mod database;

@@ -1,23 +1,28 @@
 use std::sync::{Mutex, Arc};
 use std::collections::HashMap;
 
-// Register a new websocket connection
 pub struct Register {
     pub ws: ws::Sender,
     pub channel_pointer: Arc<Mutex<HashMap<String, Box<ws::Sender>>>>,
 }
 
+#[derive(Serialize, Deserialize)]
+struct RegistrationBody {
+    message: String
+}
+
 impl ws::Handler for Register {
-    // Here we add ourself to the vector of connections
     fn on_message(&mut self, msg: ws::Message) -> ws::Result<()> {
-        println!("Register handler received a message: {}", msg);
+        let raw_msg =  msg.as_text().unwrap();
+        match serde_json::from_str::<RegistrationBody>(raw_msg) {
+            Ok(parsed_msg) => {
+                let mut channel_ref = self.channel_pointer.lock().unwrap();
+                let ws = self.ws.clone();
+                channel_ref.insert(parsed_msg.message, Box::new(ws));
+                self.ws.send("{\"status\": \"connected\"}")
+            },
+            Err(_) => self.ws.close(ws::CloseCode::Error)
+        }
 
-        let owner_msg = String::from(msg.as_text().unwrap());
-        let mut channel_ref = self.channel_pointer.lock().unwrap();
-
-        let ws = self.ws.clone();
-        channel_ref.insert(owner_msg, Box::new(ws));
-
-        self.ws.send("")
     }
 }
